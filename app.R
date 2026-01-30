@@ -1,5 +1,62 @@
+# --- Paquetes base y manipulación de datos ---
+library(minpack.lm)
+library(tidyverse)       # Colección de paquetes para manipulación, análisis y gráficos (incluye dplyr, ggplot2, tidyr, readr, stringr, etc.)
+library(lubridate)       # Manejo de fechas y tiempos
+library(data.table)      # Alternativa rápida a data.frames para datos grandes
+library(janitor)         # Limpieza de datos (tablas, nombres de columnas, etc.)
+library(stringr)         # Manipulación de strings
+library(zip)             # Gestion de archivos comprimidos
+
+# --- Spatial / raster / geospatial data ---
+library(devtools)
+library(raster)
+library(sp)
+library(sf)              # Lectura y manipulación de datos espaciales vectoriales (reemplaza rgdal, sp, rgeos en gran parte)
+library(terra)           # Lectura y manipulación de datos raster (reemplazo moderno de raster, rgdal)
+library(gdalUtilities)   # Ejecutar comandos GDAL desde R (útil para tareas geoespaciales avanzadas)
+library(splines)
+library(psych)
+
+# --- NetCDF / climatología / meteorología ---
+library(ncdf4)           # Lectura y escritura de archivos NetCDF
+
+# --- Statistical analysis and modeling ---
+library(pastecs)         # for statistics analysis "stat.desc"
+library(gstat)           # Geoestadística, kriging, interpolación
+library(latticeExtra)    # Gráficos en lattice (complemento útil para mapas y datos espaciales)
+library(performance)     # Diagnósticos y métricas de modelos estadísticos
+library(Hmisc)           # Estadísticas descriptivas, tablas, utilidades diversas
+library(circular)        # Estadística para datos circulares (ángulos, direcciones)
+library(matrixStats)     # Estadísticas rápidas sobre filas/columnas de matrices
+
+# --- Visualization ---
+library(ggpubr)          # Publicación de gráficos basados en ggplot2
+library(ggprism)         # Estilo Prism (como en gráficos científicos)
+library(corrplot)        # Visualización de matrices de correlación
+library(RColorBrewer)    # Paletas de colores
+library(colorspace)      # Paletas de colores avanzadas
+library(plotrix)         # Funciones gráficas adicionales (p. ej. diagramas circulares, barras 3D)
+library(factoextra)      # Visualización de análisis multivariados (PCA, clustering, etc.)
 library(shiny)
-library(leaflet)        
+library(shinyjs)
+library(tmap)
+library(leaflet)
+library(plotly)
+
+# --- Table output and reports ---
+library(openxlsx)        # Leer y escribir archivos Excel sin depender de Java
+library(readxl)          # Lectura de archivos Excel
+library(DT)              # Tablas interactivas en HTML
+
+# --- Parallel computing ---
+library(parallel)        # Procesamiento en paralelo base de R
+library(doParallel)      # Backend paralelo para foreach
+library(foreach)         # Bucle foreach para paralelización
+
+# --- Miscellaneous ---
+library(reticulate)      # Integración con Python
+library(tiff)            # Lectura y escritura de imágenes TIFF
+library(here)      
 
 tmap::ttm()
 
