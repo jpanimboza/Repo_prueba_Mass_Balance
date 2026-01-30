@@ -1,5 +1,4 @@
 setwd(".")
-source("./functions/Libraries.R", local = TRUE)
 
 tmap::ttm()
 
