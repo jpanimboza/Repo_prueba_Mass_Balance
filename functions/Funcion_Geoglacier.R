@@ -1,10 +1,6 @@
-Geoglacier <- function(rawData, shapes_path, dem, Resolution, crsID, N.Obs,summit, geodetic_balance, m){
-  #Crea la ruta a la carpeta temporal
-  tmp_dir <- tempdir() 
-  wb <- createWorkbook()
-  #rawData <- data.frame(read.delim(rawData, header=F, sep="\t", dec="."))
+Geoglacier <- function(rawData, shapes_path, dem, Resolution, crsID, N.Obs,summit, geodetic_balance, m, wb, temp_dir){
   source("./functions/Lliboutry_NL.r")
-  NLMR<-NLM(rawData, shapes_path, dem, Resolution, crsID, N.Obs, summit)
+  NLMR<-NLM(rawData, shapes_path, dem, Resolution, crsID, N.Obs, summit,wb)
   e_obs_mod <- NLMR$e_obs_mod
   Nyear <- NLMR$Nyear
   data4model <- NLMR$data4model
@@ -192,7 +188,7 @@ Geoglacier <- function(rawData, shapes_path, dem, Resolution, crsID, N.Obs,summi
     #=== GLACIOLOGICAL MASS BALANCE VALIDATION - GEODETIC ADJUSTMENT (Zemp et al., 2013) ===
     #=== CALCULATION OF THE CALIBRATED DISTRIBUTED MASS BALANCE WITH GEODETIC ADJUSTMENT =====
     # Frecuentemente el periodo de monitoreo cliaciologico no coincide con el monitoreo geodesico
-    # en esotos casos se asume un rango de tolerancia de 3 anios (antes/despues) para suponer que la tendencia
+    # en estos casos se asume un rango de tolerancia de 3 anios (antes/despues) para suponer que la tendencia
     # observada en el periodo coincidente se mantiene
     yr_glc_o <- as.numeric(substr(Nyear[1], 1, 4))
     yr_glc_f <- as.numeric(substr(Nyear[length(Nyear)], 1, 4))
@@ -520,7 +516,7 @@ Geoglacier <- function(rawData, shapes_path, dem, Resolution, crsID, N.Obs,summi
                             marker = list(size = 6, opacity = 0.7, color = ~z, colorscale = 'Viridis'),
                             text = ~paste("Altitud:", round(z,1), "m<br>Balance:", round(value,3)),
                             hoverinfo = "text") %>%
-    layout(title = "Relación valor ∼ altitud",
+    layout(title = "Relación Balance ∼ altitud",
            xaxis = list(title = "Altitud (m)"),
            yaxis = list(title = "Balance"),
            hovermode = "closest")
@@ -563,15 +559,27 @@ Geoglacier <- function(rawData, shapes_path, dem, Resolution, crsID, N.Obs,summi
     )
   source("./functions/RasterPlot_tmap.R")
   mapa_raster = RasterPlot_tmap(brick_list$LMf, FALSE, "Mass Balance - Lliboutry' fill", brick_list$Raw, Nyear, shape_list, crsID)
-  source("./functions/Graph_NonAdj.R")
-  Graph_NonAdjR <- Graph_NonAdj(att, data4model, bo_t, Nyear, bit_LM, rawData, B_LMf_w, B_LMf_idw, B_LMf_krg, e_obs_mod)
+  source("./functions/Graph_NonAdj_St.R")
+  source("./functions/Graph_Adj_St.R")
+  message(temp_dir)
+  if(aux==0){ 
+    Graph_R <- Graph_NonAdj(att, data4model, bo_t, Nyear, bit_LM, 
+                            rawData, B_LMf_w, B_LMf_idw, B_LMf_krg, 
+                            e_obs_mod, temp_dir, wb)
+  }else{ 
+    Graph_Adj(att, data4model, bo_t, Nyear, bit_LM, rawData, 
+              bit_LMf_w_adj, bit_LMf_idw_adj, bit_LMf_krg_adj,
+              B_LMf_w, B_LMf_idw, B_LMf_krg,
+              e_obs_mod, temp_dir, wb)
+  }
   return(list(
     mapa_contornos_idw = mapa_contornos_idw,
     mapa_contornos_krg = mapa_contornos_krg,
     mapa_raster = mapa_raster,
     balance_altura = balance_altura,
     balance_altura_anual = balance_altura_anual,
-    Graph_NonAdjPlots = Graph_NonAdjR$plots
+    geodetic_used = aux
   )
   )
+  
 }
