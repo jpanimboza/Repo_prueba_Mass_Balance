@@ -468,7 +468,7 @@ Geoglacier <- function(rawData, shapes_path, dem, Resolution, crsID, N.Obs,summi
     mapa_contornos_idw = ContourPlot_tmap(
       ai_df_idw_adj,
       "idw",
-      "Balance de masa promedio ajustado - IDW",
+      "Balance de masa promedio ajustado",
       brick_raw,
       shape_list,
       dem = dem,
@@ -478,7 +478,7 @@ Geoglacier <- function(rawData, shapes_path, dem, Resolution, crsID, N.Obs,summi
     mapa_contornos_krg = ContourPlot_tmap(
       ai_df_krg_adj,
       "krig",
-      "Balance de masa promedio ajustado - Kriging",
+      "Balance de masa promedio ajustado",
       brick_raw,
       shape_list,
       dem = dem,
@@ -488,17 +488,16 @@ Geoglacier <- function(rawData, shapes_path, dem, Resolution, crsID, N.Obs,summi
     mapa_contornos_idw = ContourPlot_tmap(
       ai_df,
       "idw",
-      "Balance de masa promedio - IDW",
+      "Balance de masa promedio",
       brick_raw,
       shape_list,
       dem = dem,
       crsID = crsID
     )
-    
     mapa_contornos_krg = ContourPlot_tmap(
       ai_df,
       "krig",
-      "Balance de masa promedio - Kriging",
+      "Balance de masa promedio",
       brick_raw,
       shape_list,
       dem = dem,
@@ -532,7 +531,7 @@ Geoglacier <- function(rawData, shapes_path, dem, Resolution, crsID, N.Obs,summi
     drop_na(z, balance) %>%
     group_by(año) %>%
     arrange(z) %>%
-    mutate(tendencia = predict(loess(balance ~ z, span = 0.4))) %>%   # ← LOESS por año
+    mutate(tendencia = predict(loess(balance ~ z, span = 0.4))) %>%   
     ungroup() %>%
     
     plot_ly(x = ~z, y = ~balance, color = ~año, colors = "Paired",
@@ -558,10 +557,9 @@ Geoglacier <- function(rawData, shapes_path, dem, Resolution, crsID, N.Obs,summi
       legend = list(title = list(text = "Año"))
     )
   source("./functions/RasterPlot_tmap.R")
-  mapa_raster = RasterPlot_tmap(brick_list$LMf, FALSE, "Mass Balance - Lliboutry' fill", brick_list$Raw, Nyear, shape_list, crsID)
+  mapa_raster = RasterPlot_tmap(brick_list$LMf, FALSE, "Balance de Masa por año", brick_list$Raw, Nyear, shape_list, crsID)
   source("./functions/Graph_NonAdj_St.R")
   source("./functions/Graph_Adj_St.R")
-  message(temp_dir)
   if(aux==0){ 
     Graph_R <- Graph_NonAdj(att, data4model, bo_t, Nyear, bit_LM, 
                             rawData, B_LMf_w, B_LMf_idw, B_LMf_krg, 

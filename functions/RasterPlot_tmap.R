@@ -46,7 +46,7 @@ RasterPlot_tmap <- function(obj, showraw, title, brick_raw, Nyear, shape_list, c
     ) +
     tm_shape(poly_sf) +
     tm_borders(lwd = 2, col = "black") +
-    tm_title(title) +
+    #tm_title(title) +
     tm_layout(
       legend.outside = FALSE, 
       frame = FALSE,

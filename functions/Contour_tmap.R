@@ -229,7 +229,7 @@ ContourPlot_tmap <- function(df, method, title, brick_raw, shape_list, dem, crsI
   map <- tm_shape(ai_predic_r) +
     tm_raster(
       col.scale = tm_scale_continuous(values = rampcols, midpoint = 0),
-      col.legend = tm_legend(title = expression("Balance (m w.e. a"^-1*")")),
+      col.legend = tm_legend(title = "Balance (m w.e./ año)"),
     )+
     tm_shape(poly_sf) + tm_borders(lwd = 3) +
     {      if (!is.null(ctr_sf) && nrow(ctr_sf)>0) {
@@ -238,7 +238,7 @@ ContourPlot_tmap <- function(df, method, title, brick_raw, shape_list, dem, crsI
         NULL # para que tmap no falle
       }
     } +
-    tm_title(title) +
+    #tm_title(title) +
     tm_layout(legend.outside = TRUE,
               legend.outside.position = "right",
               frame = FALSE) +
