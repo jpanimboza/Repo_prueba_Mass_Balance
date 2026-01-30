@@ -1,4 +1,5 @@
-setwd(".")
+library(shiny)
+library(leaflet)        
 
 tmap::ttm()
 
