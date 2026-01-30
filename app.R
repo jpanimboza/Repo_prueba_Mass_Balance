@@ -23,7 +23,7 @@ ui <- fluidPage(
       
       actionButton("run", "Ejecutar Modelo", class = "btn-primary"),
       hr(),
-      downloadButton("downloadExcel", "Descargar resultados (.xlsx)")
+      downloadButton("downloadResultados", "Descargar resultados (.xlsx)")
     ),
     
     mainPanel(
@@ -52,20 +52,7 @@ ui <- fluidPage(
                  plotlyOutput("balance_altura_anual", height = "650px")
         ),
         tabPanel(
-          "Lliboutry No Ajustado",
-          
-          h4("Variabilidad vs Altitud"),
-          plotlyOutput("sd_alt"),
-          
-          h4("βₜ anual"),
-          plotlyOutput("beta_t"),
-          
-          h4("Perfil MB por año"),
-          selectInput("year_mb", "Seleccionar año:", choices = NULL, width = "220px"),
-          plotlyOutput("mb_profile_plot", height = "300px"),
-          
-          h4("Distribución de residuales"),
-          plotlyOutput("residuals")
+          "Graficos"
         )
         # ← Aquí puedes añadir más pestañas en el futuro si quieres (mapa, tablas, etc.)
       )
@@ -79,11 +66,12 @@ server <- function(input, output, session) {
   mapa_reactivo2 <- reactiveVal(NULL)
   grafico_reactivo <- reactiveVal(NULL)
   grafico_reactivo2 <- reactiveVal(NULL)
-  graficos_noAjustado <- reactiveVal(NULL)
+  geodetic_used <- reactiveVal(FALSE)
   output$contour_map <- renderLeaflet({
     req(mapa_reactivo())     
     tmap::tmap_leaflet(mapa_reactivo())        
   })
+  wb_guardado <- reactiveVal(NULL)
   
   output$balance_anual <- renderLeaflet({
     req(mapa_reactivo2())     
@@ -99,21 +87,6 @@ server <- function(input, output, session) {
     grafico_reactivo2()          
   })
   
-  output$sd_alt <- renderPlotly({
-    req(graficos_noAjustado())
-    graficos_noAjustado()$sd_alt
-  })
-  
-  output$beta_t <- renderPlotly({
-    req(graficos_noAjustado())
-    graficos_noAjustado()$beta_t
-  })
-  
-  output$residuals <- renderPlotly({
-    req(graficos_noAjustado())
-    graficos_noAjustado()$residuals
-  })
-
   # === SISTEMA DE LOGS ===
   log_messages <- reactiveVal("<span style='color:#666'>Esperando ejecución...</span><br>")
   
@@ -135,7 +108,8 @@ server <- function(input, output, session) {
     
     temp_dir <- tempdir()
     dir.create(file.path(temp_dir, "shapes"), showWarnings = FALSE, recursive = TRUE)
-    
+    dir_download <- file.path(temp_dir, "Resultados")
+    dir.create(dir_download, showWarnings = FALSE, recursive = TRUE)
     # Copiar archivos
     raw_path <- file.path(temp_dir, input$rawData$name)
     file.copy(input$rawData$datapath, raw_path, overwrite = TRUE)
@@ -163,11 +137,10 @@ server <- function(input, output, session) {
     source("functions/Funcion_Geoglacier.R", local = TRUE)
     
     # Workbook global para descarga
-    wb <<- openxlsx::createWorkbook()
+    wb <- openxlsx::createWorkbook()
     
     tryCatch({
       add_log("Ejecutando Balance de Masa Glaciar...", "#007bff")
-      
       args_list <- list(
         rawData = raw_path,
         shapes_path = paste0(shape_dir, "/"),
@@ -177,10 +150,17 @@ server <- function(input, output, session) {
         N.Obs = input$NObs,
         summit = input$summit,
         geodetic_balance = geodetic_path,
-        m = input$range_a
+        m = input$range_a,
+        wb = wb,
+        temp_dir = temp_dir
       )
       
       resultado <- do.call(Geoglacier, args_list)
+      
+      wb_guardado(wb)
+      ruta_archivo_excel <- file.path(dir_download, "Resultados_Lliboutry.xlsx")
+      openxlsx::saveWorkbook(wb, ruta_archivo_excel, overwrite = TRUE)
+      
       if (!is.null(resultado$mapa_contornos_krg) && 
           inherits(resultado$mapa_contornos_krg, "tmap")) {
         
@@ -232,18 +212,7 @@ server <- function(input, output, session) {
         grafico_reactivo2(NULL)
         add_log("ADVERTENCIA: Grafico Nulo", "#ffc107")
       }
-      if (!is.null(resultado$Graph_NonAdjPlots) && 
-          is.list(resultado$Graph_NonAdjPlots)) {
-        
-        graficos_noAjustado(resultado$Graph_NonAdjPlots)   # ← GUARDAR
-        
-        add_log("Grafico de Balance No ajustado recibido correctamente", "#28a745")
-        showNotification("Gráfico de balance no ajustado Generado", type = "default", duration = 5)
-        
-      } else {
-        graficos_noAjustado(NULL)
-        add_log("ADVERTENCIA: Grafico Balance No Ajustado Nulo", "#ffc107")
-      }
+      geodetic_used(as.logical(resultado$geodetic_use))
       add_log("Modelo ejecutado correctamente", "#28a745")
       add_log("EJECUCIÓN FINALIZADA", "#28a745")
       
@@ -254,42 +223,40 @@ server <- function(input, output, session) {
       showNotification("Error en la ejecución del modelo", type = "error", duration = NULL)
     })
   })
-  
-  # --------------------------------------------------
-  # Selector dinámico para perfiles MB por año
-  # --------------------------------------------------
-  observe({
-    req(graficos_noAjustado())
-    req(graficos_noAjustado()$mb_years)
-    
-    updateSelectInput(
-      session,
-      "year_mb",
-      choices = graficos_noAjustado()$mb_years,
-      selected = max(graficos_noAjustado()$mb_years)
-    )
-  })
-  
-  # --------------------------------------------------
-  # Render del perfil MB seleccionado (Plotly)
-  # --------------------------------------------------
-  output$mb_profile_plot <- renderPlotly({
-    req(input$year_mb, graficos_noAjustado()$mb_profiles_list)
-    
-    p_ggplot <- graficos_noAjustado()$mb_profiles_list[[input$year_mb]]
-    
-    ggplotly(p_ggplot, tooltip = c("x", "y")) %>%
-      layout(
-        hovermode = "closest",
-        legend = list(orientation = "h", xanchor = "center", x = 0.5, y = -0.1)
-      )
-  })
-  
+
   # === DESCARGA EXCEL ===
   output$downloadExcel <- downloadHandler(
     filename = "Resultados_Lliboutry.xlsx",
+    content = function(dir_download) {
+      # Usar el workbook guardado
+      wb <- wb_guardado()
+      
+      # Validar que existe
+      req(wb)
+      
+      # Guardar el workbook
+      openxlsx::saveWorkbook(wb, dir_download, overwrite = TRUE)
+    }
+  )
+  output$downloadResultados <- downloadHandler(
+    filename = function() {
+      paste0("Resultados_", format(Sys.Date(), "%Y%m%d"), ".zip")
+    },
     content = function(file) {
-      openxlsx::saveWorkbook(wb, file, overwrite = TRUE)
+      temp_dir <- tempdir()
+      dir_resultados <- file.path(temp_dir, "Resultados")
+      
+      req(dir.exists(dir_resultados))
+      
+      # Cambiar al directorio temporal (funciona en todos los OS)
+      wd_actual <- getwd()
+      setwd(temp_dir)
+      
+      # Crear ZIP usando rutas relativas
+      zip::zip(zipfile = file, files = "Resultados")
+      
+      # Volver al directorio original
+      setwd(wd_actual)
     }
   )
 }
