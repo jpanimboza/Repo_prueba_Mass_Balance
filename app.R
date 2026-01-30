@@ -61,7 +61,40 @@ library(here)
 tmap::ttm()
 
 ui <- fluidPage(
-  titlePanel("BALANCE DE MASA GLACIAR"),
+  fluidRow(
+    style = "background-color: #24618E; padding: 15px 20px; margin-bottom: 20px;",  # Fondo azul oscuro + algo de padding
+    
+    column(
+      width = 4,  
+      align = "left",
+      style = "display: flex; align-items: center; gap: 20px;", 
+      
+      # Logo 1
+      img(
+        src = "GEO-Mountains-Logo.png",         
+        height = "60px",            
+        alt = "Logo GEO"
+      ),
+      
+      # Logo 2
+      img(
+        src = "./logo-yt-blanco.png",
+        height = "60px",
+        alt = "Logo Yachay"
+      )
+    ),
+    
+    column(
+      width = 9,  # El resto para el título
+      align = "left",
+      style = "display: flex; align-items: center;",  # Alinea verticalmente con los logos
+      
+      h2(
+        "BALANCE DE MASA GLACIAR",
+        style = "color: white; margin: 0; font-weight: bold;"  # Texto blanco, sin margen extra
+      )
+    )
+  ),
   
   sidebarLayout(
     sidebarPanel(
@@ -80,7 +113,7 @@ ui <- fluidPage(
       
       actionButton("run", "Ejecutar Modelo", class = "btn-primary"),
       hr(),
-      downloadButton("downloadResultados", "Descargar resultados (.xlsx)")
+      downloadButton("downloadResultados", "Descargar resultados (.zip)")
     ),
     
     mainPanel(
@@ -92,26 +125,42 @@ ui <- fluidPage(
                             white-space: pre-wrap; overflow-y:auto;",
                      uiOutput("log_messages"))
         ),
-        tabPanel("Balance de masa promedio",
+        tabPanel("Balance de masa promedio anual",
                  br(),
-                 leafletOutput("contour_map", height = "650px", width = "100%")
+                 leafletOutput("contour_map", height = "500px", width = "100%")
         ),
         tabPanel("Balance anual",
                  br(),
-                 leafletOutput("balance_anual", height = "650px", width = "100%")
+                 leafletOutput("balance_anual", height = "500px", width = "100%")
         ),
         tabPanel("Altura vs. Balance",
                  br(),
-                 plotlyOutput("balance_altura", height = "650px")
+                 plotlyOutput("balance_altura", height = "500px")
         ),
         tabPanel("Altura vs. Balance por año",
                  br(),
-                 plotlyOutput("balance_altura_anual", height = "650px")
+                 plotlyOutput("balance_altura_anual", height = "500px")
         ),
         tabPanel(
-          "Graficos"
+          "Soporte instituciones",
+          fluidRow(
+            column(2, img(src = "Andes-C2H-logo_s.jpg",               height = "120px", style = "display: block; margin: auto;")),
+            column(2, img(src = "Autoridad-nacional-agua-ana-logo_s.jpg", height = "120px", style = "display: block; margin: auto;")),
+            column(2, img(src = "GEO-Mountains-logo_s.jpg",           height = "120px", style = "display: block; margin: auto;")),
+            column(2, img(src = "Glacioclim-logo_s.jpg",              height = "120px", style = "display: block; margin: auto;")),
+            column(2, img(src = "ianigla-logo_s.jpg",                 height = "120px", style = "display: block; margin: auto;")),
+            column(2, img(src = "IDEAM-logo_s.jpg",                   height = "120px", style = "display: block; margin: auto;"))
+          ),
+          
+          fluidRow(
+            column(2, img(src = "Inaigem-logo_s.jpg",                 height = "120px", style = "display: block; margin: auto;")),
+            column(2, img(src = "Red_ecuatoriana_cambio_climatico_s.png", height = "120px", style = "display: block; margin: auto;")),
+            column(2, img(src = "UMSA-logo_s.jpg",                    height = "120px", style = "display: block; margin: auto;")),
+            column(2, img(src = "Universidad-Austral-de-Chile-logo_s.jpg", height = "120px", style = "display: block; margin: auto;")),
+            column(2, img(src = "wgms-logo_s.jpg",                    height = "120px", style = "display: block; margin: auto;")),
+            column(2, "") 
+          )
         )
-        # ← Aquí puedes añadir más pestañas en el futuro si quieres (mapa, tablas, etc.)
       )
     )
   )
