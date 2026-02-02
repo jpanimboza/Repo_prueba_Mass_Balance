@@ -24,7 +24,6 @@ ContourPlot_tmap <- function(df, method, title, brick_raw, shape_list, dem, crsI
   if (missing(shape_list) || length(shape_list) == 0) stop("shape_list no está definido o está vacío.")
   if (is.null(shape_list[[1]])) stop("shape_list[[1]] es NULL.")
   
-  message("Construyendo polígono...")
   poly_sf <- build_poly_sf(shape_list[[1]], crsID)
   terra_poly <- terra::vect(poly_sf)
   
@@ -32,7 +31,6 @@ ContourPlot_tmap <- function(df, method, title, brick_raw, shape_list, dem, crsI
   # 2) Preparar DEM / grid
   # -------------------------
   if (missing(dem)) stop("Argumento 'dem' es requerido.")
-  message("Procesando DEM...")
   cropped_DEM <- raster(dem)
   cropped_DEM <- resample(cropped_DEM, brick_raw)
   cropped_DEM <- crop(cropped_DEM, brick_raw)
@@ -41,7 +39,6 @@ ContourPlot_tmap <- function(df, method, title, brick_raw, shape_list, dem, crsI
   # -------------------------
   # 3) Puntos
   # -------------------------
-  message("Preparando puntos...")
   points <- na.omit(df)
   names(points) <- c("x", "y", "ai")
   coordinates(points) <- ~ x + y
@@ -50,7 +47,6 @@ ContourPlot_tmap <- function(df, method, title, brick_raw, shape_list, dem, crsI
   # -------------------------
   # 4) Interpolación
   # -------------------------
-  message("Interpolando con método: ", method)
   if (method == "idw") {
     ai_predic <- idw(ai ~ 1, locations = points, newdata = spx, idp = 2)
   } else if (method == "krig") {
@@ -70,7 +66,6 @@ ContourPlot_tmap <- function(df, method, title, brick_raw, shape_list, dem, crsI
   # -------------------------
   # 5) Convertir y aplicar máscara
   # -------------------------
-  message("Convirtiendo a raster...")
   ai_predic_r <- tryCatch({
     terra::rast(ai_predic)
   }, error = function(e) stop("No pude convertir ai_predic a rast: ", e$message))
@@ -82,7 +77,6 @@ ContourPlot_tmap <- function(df, method, title, brick_raw, shape_list, dem, crsI
     stop("El raster interpolado quedó vacío (NA) tras aplicar máscara.")
   }
   rng <- range(vals, na.rm = TRUE)
-  message("Rango de valores: [", rng[1], ", ", rng[2], "]")
   
   # -------------------------
   # 6) Contornos
@@ -91,7 +85,6 @@ ContourPlot_tmap <- function(df, method, title, brick_raw, shape_list, dem, crsI
     ctr_sf <- NULL
     if (diff(rng) > 0.05) {
       levels_vec <- pretty(range(values(ai_predic_r), na.rm = TRUE), n = 12)
-      message("Generando contornos en niveles: ", paste(levels_vec, collapse=", "))
       
       poly_sf_local <- tryCatch(st_transform(poly_sf, crs = crsID), error = function(e) poly_sf)
       
@@ -130,7 +123,6 @@ ContourPlot_tmap <- function(df, method, title, brick_raw, shape_list, dem, crsI
           ctr_sf <- st_intersection(ctr_sf, poly_sf_local)
           ctr_sf[!st_is_empty(ctr_sf$geometry), , drop = FALSE]
         })
-        message("Contornos generados: ", nrow(ctr_sf), " líneas")
       }
     }
   })
@@ -155,11 +147,9 @@ ContourPlot_tmap <- function(df, method, title, brick_raw, shape_list, dem, crsI
   # 8) Construir mapa (compatible v3 y v4)
   # -------------------------
   tmap_ver <- packageVersion("tmap")
-  message("Construyendo mapa con tmap v", tmap_ver)
   map <- tryCatch({
     if (tmap_ver >= "4.0") {
       # Sintaxis tmap v4.2 (tu código original)
-      message("Usando sintaxis tmap v4")
       m <- tm_shape(ai_predic_r) +
         tm_raster(
           col.scale = tm_scale_continuous(values = rampcols, midpoint = 0),
@@ -182,7 +172,6 @@ ContourPlot_tmap <- function(df, method, title, brick_raw, shape_list, dem, crsI
       
     } else {
       # Sintaxis tmap v3.3.4 (para Kaggle/notebook)
-      message("Usando sintaxis tmap v3")
       m <- tm_shape(ai_predic_r) +
         tm_raster(
           "var1.pred",
@@ -212,6 +201,6 @@ ContourPlot_tmap <- function(df, method, title, brick_raw, shape_list, dem, crsI
     stop("Error al construir mapa tmap: ", e$message)
   })
   dev.off()
-  message("Mapa creado exitosamente")
   return(map)
+
 }
