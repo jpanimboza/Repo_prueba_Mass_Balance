@@ -138,12 +138,7 @@ Geoglacier <- function(rawData, shapes_path, dem, Resolution, crsID, N.Obs,summi
   e_glc.point.krg.tot <- sqrt(e_mesMB^2+(sum(B_LMf_krg$B_LMf_krg_a)^2)*(e_dc^2))*sqrt(length(Nyear))
   # Error spatial averaging of point measurements - local representativeness of local measurements
   e_repres.yr <- sd(unlist(bit_LMf[-c(1:3)]), na.rm = T) / sqrt(unlist(lapply(stat.idw.CV_LMf, function(sublist) sublist[[1]]), use.names=F)[1])
-  e_repres.tot <- sd(unlist(bit_LMf[-c(1:3)]), na.rm = T) / sqrt(unlist(lapply(stat.idw.CV_LMf, function(sublist) sublist[[1]]), use.names=F)[1]) #e_repres.tot <- e_repres.yr * sqrt(length(Nyear))
-  # lliboutry method
-  #Calculado en linea 18
-  #   e_obs_mod_sd.tot
-  # Error interpolation method
-  ## Surface-area weighthed
+  e_repres.tot <- sd(unlist(bit_LMf[-c(1:3)]), na.rm = T) / sqrt(unlist(lapply(stat.idw.CV_LMf, function(sublist) sublist[[1]]), use.names=F)[1]) 
   std.w <- stat.w.sd^2
   n_obs <- unlist(lapply(stat.idw.CV_LMf, function(sublist) sublist[[1]]), use.names=F)
   e_w_sd.tot <- sqrt(sum(std.w)/((n_obs[1]*length(Nyear))-length(Nyear)))
@@ -178,8 +173,6 @@ Geoglacier <- function(rawData, shapes_path, dem, Resolution, crsID, N.Obs,summi
   
   E_glc.krg.tot <- sqrt(e_glc.point.krg.tot^2+e_glc.point.krg.tot^2+e_glac.area.krg.tot^2)
   E_glc.krg.yr <- E_glc.krg.tot / sqrt(length(Nyear))
-  message("Archivo encontrado")
-  message(!is.null(geodetic_balance))
   ####################################################################################### 
   # GEODETIC MASS BALANCE (Dussaillant et al., 2019)
   if (!is.null(geodetic_balance)){
@@ -206,8 +199,8 @@ Geoglacier <- function(rawData, shapes_path, dem, Resolution, crsID, N.Obs,summi
     E_glc_adj_a <- list() 
     for (k in 1:(nrow(geo_df)-1)) {
       # Define the glaciological time series
-      yr_geo_o <- geo_df$yr_geo_o[k] # para Antisana 15a
-      yr_geo_f <- geo_df$yr_geo_f[k] # para Antisana 15a
+      yr_geo_o <- geo_df$yr_geo_o[k]
+      yr_geo_f <- geo_df$yr_geo_f[k] 
       
       # Calculate the limits with tolerance of +/-2 years 
       # This script first expands the reference interval by a tolerance of 2 years in either direction. 
@@ -504,58 +497,14 @@ Geoglacier <- function(rawData, shapes_path, dem, Resolution, crsID, N.Obs,summi
       crsID = crsID
     )
   }
-  ai_df_z <- ai_df
-  ai_df_z$z <- terra::extract(rast(dem), ai_df_z[c("x","y")], method="bilinear")[, 2]
-  ai_df_z <- ai_df_z[!is.na(ai_df_z$value), ]
-  balance_altura <- plot_ly(data = ai_df_z, 
-                            x = ~z, 
-                            y = ~value,
-                            type = 'scatter',
-                            mode = 'markers',
-                            marker = list(size = 6, opacity = 0.7, color = ~z, colorscale = 'Viridis'),
-                            text = ~paste("Altitud:", round(z,1), "m<br>Balance:", round(value,3)),
-                            hoverinfo = "text") %>%
-    layout(title = "Relación Balance ∼ altitud",
-           xaxis = list(title = "Altitud (m)"),
-           yaxis = list(title = "Balance"),
-           hovermode = "closest")
-  yearly_b_df <- as.data.frame(brick_list$LMf, xy = TRUE, na.rm = TRUE)
-  yearly_b_df$z <- terra::extract(rast(dem), yearly_b_df[c("x","y")], method="bilinear")[, 2]
-  
-  balance_altura_anual <- yearly_b_df %>%
-    select(z, starts_with("X20")) %>%
-    pivot_longer(cols = starts_with("X20"),
-                 names_to = "fecha",
-                 values_to = "balance") %>%
-    mutate(año = substr(fecha, 2, 5)) %>%
-    drop_na(z, balance) %>%
-    group_by(año) %>%
-    arrange(z) %>%
-    mutate(tendencia = predict(loess(balance ~ z, span = 0.4))) %>%   
-    ungroup() %>%
-    
-    plot_ly(x = ~z, y = ~balance, color = ~año, colors = "Paired",
-            type = "scatter", mode = "markers",
-            marker = list(size = 5, opacity = 0.7),
-            text = ~paste("Año:", año,
-                          "<br>Altitud:", round(z), "m",
-                          "<br>Balance:", round(balance, 3)),
-            hoverinfo = "text",
-            name = ~año) %>%
-    
-    add_lines(x = ~z, y = ~tendencia,
-              color = ~año,
-              line = list(width = 5),
-              name = ~paste(año, "tendencia"),
-              showlegend = TRUE) %>%
-    
-    layout(
-      title = "Balance anual vs Altitud (2000–2009)",
-      xaxis = list(title = "Altitud (m)"),
-      yaxis = list(title = "Balance (m w.e./año)"),
-      hovermode = "closest",
-      legend = list(title = list(text = "Año"))
-    )
+  source("./functions/Balance_altura.R")
+  if(aux==1){
+    B_A_Plot = Balance_Altura_Plots(ai_df_krg_adj,brick_list, dem)
+  }else {
+    B_A_Plot = Balance_Altura_Plots(ai_df,brick_list, dem)
+  }
+  balance_altura <- B_A_Plot$balance_altura
+  balance_altura_anual <- B_A_Plot$balance_altura_anual
   source("./functions/RasterPlot_tmap.R")
   mapa_raster = RasterPlot_tmap(brick_list$LMf, FALSE, "Balance de Masa por año", brick_list$Raw, Nyear, shape_list, crsID)
   source("./functions/Graph_NonAdj_St.R")
